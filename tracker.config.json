@@ -1,0 +1,6 @@
+{
+  "mode": "remote",
+  "backendURL": "http://localhost:5000/track",
+  "notify": true,
+  "projectName": "tracker-backend"
+}
