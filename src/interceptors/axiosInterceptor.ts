@@ -1,43 +1,52 @@
 import axios from "axios";
 import { getConfig } from "../config/configManager";
+import { storeSnapshot } from "../snapshot/snapshotManager";
 
 interface Snapshot {
+  type: string;
+  timestamp: string;
+  project: string;
   url: string;
   method: string;
   headers: Record<string, any>;
   body: any;
-  clientId: string;
+  client_id: string;
 }
 
 export function attachAxiosInterceptor() {
   const config = getConfig();
-
-  // if (config.mode === "local" || config.mode === "hybrid") {
-  //   await storeSnapshotLocally(snapshot, config.localPath, config.clientId);
-  // }
-
-  // if (config.mode === "remote" || config.mode === "hybrid") {
-  //   await sendSnapshotToBackend(snapshot, config.backendURL);
-  // }
+  const internalAxios = axios.create();
 
   axios.interceptors.request.use(async (req) => {
     const snapshot: Snapshot = {
+      type: "outgoing_request",
+      timestamp: new Date().toISOString(),
       url: req.url || "",
-      method: (req.method || "GET").toUpperCase(),
+      method: req.method?.toUpperCase() || "POST",
       headers: req.headers || {},
       body: req.data || null,
-      clientId: config.clientId, // comes from your SDK config
+      project: config.projectName,
+      client_id: config.clientId
     };
 
-    if (config.mode === "remote" && config.backendURL) {
-      try {
-        await axios.post(`${config.backendURL}/snapshots`, snapshot);
-        console.log("[SDK] Snapshot sent to backend.");
-      } catch (err: any) {
-        console.warn("[SDK] Failed to send snapshot:", err.message);
+    try {
+      if (config.mode === "remote") {
+        if (!config.backendURL) throw new Error("backendURL is not defined in config");
+        console.log(snapshot, "backend");
+
+        await internalAxios.post(config.backendURL, snapshot);
+
+        if (config.logSnapshots) console.log("[SDK] Snapshot sent to backend.");
       }
-    } else {
-      console.log("[SDK] Captured Snapshot:", snapshot);
+
+      if (config.mode === "local") {
+        await storeSnapshot(snapshot);
+        if (config.logSnapshots) console.log("[SDK] Snapshot stored locally.");
+      }
+
+    } catch (err: any) {
+      console.warn("[SDK] Failed to send snapshot:", err.message);
+      console.warn("Full error:", err);
     }
 
     return req;

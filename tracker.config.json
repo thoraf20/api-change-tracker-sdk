@@ -1,6 +1,8 @@
 {
-  "mode": "remote",
-  "backendURL": "http://localhost:5000/track",
-  "notify": true,
-  "projectName": "tracker-backend"
+  "mode": "remote", 
+  "backendURL": "http://localhost:5000/track/snapshots",
+  "notify": false,
+  "projectName": "tracker-backend",
+  "clientId": "229cd6aa-f615-4c55-b158-71b60cb0ba3b",
+  "localPath": "./.api-snapshots"
 }
